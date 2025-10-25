@@ -52,3 +52,9 @@ class CRUDBase:
                     await session.rollback()
                     raise e
                 return result
+
+    async def find_all(self, **filter_by):
+        async with async_session_maker() as session:
+            query = select(self.model).filter_by(**filter_by)
+            result = await session.execute(query)
+            return result.scalars().all()

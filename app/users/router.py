@@ -1,20 +1,26 @@
+from typing import List
 from fastapi import APIRouter, Depends, Response
 from sqlalchemy.exc import IntegrityError
 
 from app.crud.user import user_crud
 from app.exceptions import NoDataUpdateException, UserAlreadyExistsException
 from app.users.auth import (authenticate_user,
-                            create_access_token,
+                            create_access_token, get_current_admin_user,
                             get_current_user,
                             get_password_hash,
                             logout)
 from app.users.models import User
-from app.users.schemas import SUserAuth, SUserRegister, SUserUpdate
+from app.users.schemas import (SUserAuth,
+                               SUserRegister,
+                               SUserUpdate,
+                               SUserResponse)
 
-user_router = APIRouter(prefix='/auth', tags=['Auth'])
+auth_router = APIRouter(prefix='/auth', tags=['Аутентификация'])
+user_router = APIRouter(prefix='/user', tags=['Пользователь'])
+admin_router = APIRouter(prefix='/admin', tags=['Администратор'])
 
 
-@user_router.post('/register/')
+@auth_router.post('/register/')
 async def register_user(user_data: SUserRegister) -> dict:
     """Регистрация пользователя."""
     user = await user_crud.find_one_or_none(email=user_data.email)
@@ -26,7 +32,7 @@ async def register_user(user_data: SUserRegister) -> dict:
     return {'message': 'Вы успешно зарегистрированы!'}
 
 
-@user_router.patch('/user/')
+@user_router.patch('/user/me/')
 async def update_user(new_data: SUserUpdate,
                       user: User = Depends(get_current_user)):
     """Обновление пользователя."""
@@ -40,14 +46,14 @@ async def update_user(new_data: SUserUpdate,
     return {'message': 'Данные пользователя успешно обновлены!'}
 
 
-@user_router.delete('/user/')
+@user_router.delete('/user/me/')
 async def delete_user(user: User = Depends(logout)):
     """Удаление пользователя."""
     await user_crud.delete_user(user_id=user.id)
     return {'message': 'Пользователь удален!'}
 
 
-@user_router.post('/login/')
+@auth_router.post('/login/')
 async def auth_user(response: Response, user_data: SUserAuth):
     """Аутентификация пользователя."""
     user = await authenticate_user(email=user_data.email,
@@ -60,7 +66,19 @@ async def auth_user(response: Response, user_data: SUserAuth):
             'message': 'Авторизация успешна!'}
 
 
-@user_router.post('/logout/', dependencies=[Depends(logout)])
+@auth_router.post('/logout/', dependencies=[Depends(logout)])
 async def logout_user():
     """Выйти из системы."""
     return {'message': 'Пользователь успешно вышел из системы'}
+
+
+@user_router.get("/users/",
+                 response_model=List[SUserResponse],
+                 dependencies=[Depends(get_current_admin_user)])
+async def get_all_users():
+    return await user_crud.find_all()
+
+
+@user_router.get("/me/", response_model=SUserResponse)
+async def get_me(user_data: User = Depends(get_current_user)):
+    return user_data

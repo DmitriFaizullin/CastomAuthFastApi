@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel, EmailStr, Field, model_validator
 
@@ -52,3 +53,14 @@ class SUserAuth(BaseModel):
                           min_length=5,
                           max_length=50,
                           description='Пароль, от 5 до 50 знаков')
+
+
+class SUserResponse(BaseModel):
+    email: str
+    first_name: str
+    last_name: str
+    is_admin: bool
+    is_user: bool
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime

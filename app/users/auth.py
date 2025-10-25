@@ -8,7 +8,7 @@ from pydantic import EmailStr
 
 from app.config import settings
 from app.crud.user import user_crud
-from app.exceptions import (BearerTokenException,
+from app.exceptions import (BearerTokenException, ForbiddenException,
                             HeaderAuthorizationException,
                             IncorrectEmailOrPasswordException,
                             NoJwtException,
@@ -109,3 +109,10 @@ async def logout(response: Response,
     await user_crud.delete_token(internal_token=user.auth_token)
     response.delete_cookie(key='access_token')
     return user
+
+
+async def get_current_admin_user(
+        current_user: User = Depends(get_current_user)):
+    if current_user.is_admin:
+        return current_user
+    raise ForbiddenException
