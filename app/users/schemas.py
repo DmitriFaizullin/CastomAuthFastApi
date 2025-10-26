@@ -48,6 +48,7 @@ class SUserUpdate(BaseModel):
 
 
 class SUserAuth(BaseModel):
+    """Схема для аутентификации пользователя."""
     email: EmailStr = Field(..., description='Электронная почта')
     password: str = Field(...,
                           min_length=5,
@@ -56,6 +57,7 @@ class SUserAuth(BaseModel):
 
 
 class SUserResponse(BaseModel):
+    """Схема данных пользователя для ответа на запрос."""
     email: str
     first_name: str
     last_name: str
@@ -64,3 +66,10 @@ class SUserResponse(BaseModel):
     is_active: bool
     created_at: datetime
     updated_at: datetime
+
+
+class SUserPermission(BaseModel):
+    """Схема для изменения прав доступа пользователя."""
+    is_user: Optional[bool] = None
+    is_admin: Optional[bool] = None
+    is_active: Optional[bool] = None

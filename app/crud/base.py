@@ -43,7 +43,6 @@ class CRUDBase:
                     .where(*[getattr(self.model, k) == v
                              for k, v in filter_by.items()])
                     .values(**values)
-                    .execution_options(synchronize_session='fetch')
                 )
                 result = await session.execute(query)
                 try:

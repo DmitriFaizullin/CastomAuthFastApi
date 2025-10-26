@@ -5,7 +5,7 @@ from app.products.schemas import SProductResponse, SProductAdd
 from app.users.auth import get_current_admin_user
 
 
-product_router = APIRouter(prefix='/products', tags=['Товары'])
+product_router = APIRouter()
 
 
 @product_router.get("/all/", response_model=List[SProductResponse])
@@ -21,7 +21,7 @@ async def get_all_products():
     return products
 
 
-@product_router.get("/{product_id}/", response_model=SProductResponse)
+@product_router.get('/{product_id}/', response_model=SProductResponse)
 async def get_product(product_id: int):
     """Получить Товар по id."""
     product = {'id': product_id,

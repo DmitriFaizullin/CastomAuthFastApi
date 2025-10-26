@@ -32,7 +32,6 @@ class UserCRUD(CRUDBase):
                     sqlalchemy_update(self.model)
                     .where(self.user_model.id == user_id)
                     .values(is_active=False)
-                    .execution_options(synchronize_session='fetch')
                 )
                 await session.execute(query)
                 try:
@@ -50,7 +49,6 @@ class UserCRUD(CRUDBase):
                     sqlalchemy_update(self.model)
                     .where(self.user_model.id == user_id)
                     .values(auth_token=internal_token)
-                    .execution_options(synchronize_session='fetch')
                 )
 
                 await session.execute(query)
@@ -69,7 +67,6 @@ class UserCRUD(CRUDBase):
                     sqlalchemy_update(self.model)
                     .where(self.user_model.auth_token == internal_token)
                     .values(auth_token=None)
-                    .execution_options(synchronize_session='fetch')
                 )
 
                 await session.execute(query)

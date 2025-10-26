@@ -8,11 +8,13 @@ from pydantic import EmailStr
 
 from app.config import settings
 from app.crud.user import user_crud
-from app.exceptions import (BearerTokenException, ForbiddenException,
+from app.exceptions import (BearerTokenException,
+                            BunnedUserException,
+                            ForbiddenException,
                             HeaderAuthorizationException,
                             IncorrectEmailOrPasswordException,
+                            InvalidTokenException,
                             NoJwtException,
-                            NoUserException,
                             TokenExpiredException)
 from app.users.models import User
 
@@ -99,7 +101,9 @@ async def get_current_user(internal_token: str = Depends(verify_access_token)):
     """Получить текущего пользователя."""
     user = await user_crud.find_one_or_none(auth_token=internal_token)
     if not user:
-        raise NoUserException
+        raise InvalidTokenException
+    if not user.is_user:
+        raise BunnedUserException
     return user
 
 
@@ -113,6 +117,7 @@ async def logout(response: Response,
 
 async def get_current_admin_user(
         current_user: User = Depends(get_current_user)):
+    """Зависимость для определения администратора."""
     if current_user.is_admin:
         return current_user
     raise ForbiddenException

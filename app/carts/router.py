@@ -5,10 +5,10 @@ from app.carts.schemas import SShoppingCart
 from app.users.auth import get_current_user
 from app.users.models import User
 
-cart_router = APIRouter(prefix='/cart', tags=['Корзина'])
+cart_router = APIRouter()
 
 
-@cart_router.get("/me/", response_model=SShoppingCart)
+@cart_router.get('/me/', response_model=SShoppingCart)
 async def get_shoppingcart(user: User = Depends(get_current_user)):
     """Получить корзину товаров пользователя."""
     products = [
@@ -28,7 +28,7 @@ async def get_shoppingcart(user: User = Depends(get_current_user)):
     return cart_data
 
 
-@cart_router.delete("/product/{product_id}/")
+@cart_router.delete('/product/{product_id}/')
 async def delete_product(product_id: int,
                          user: User = Depends(get_current_user)):
     """Удалить товар из корзины пользователя."""
@@ -36,7 +36,7 @@ async def delete_product(product_id: int,
     return {'message': f'товар {product_id} удален из корзины'}
 
 
-@cart_router.post("/product/{product_id}/")
+@cart_router.post('/product/{product_id}/')
 async def add_product(product_id: int,
                       user: User = Depends(get_current_user)):
     """Добавить товар в корзину пользователя."""

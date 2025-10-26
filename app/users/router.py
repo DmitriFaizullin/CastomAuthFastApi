@@ -3,7 +3,9 @@ from fastapi import APIRouter, Depends, Response
 from sqlalchemy.exc import IntegrityError
 
 from app.crud.user import user_crud
-from app.exceptions import NoDataUpdateException, UserAlreadyExistsException
+from app.exceptions import (NoDataUpdateException,
+                            UserAlreadyExistsException,
+                            UserNotFoundException)
 from app.users.auth import (authenticate_user,
                             create_access_token, get_current_admin_user,
                             get_current_user,
@@ -11,13 +13,14 @@ from app.users.auth import (authenticate_user,
                             logout)
 from app.users.models import User
 from app.users.schemas import (SUserAuth,
+                               SUserPermission,
                                SUserRegister,
                                SUserUpdate,
                                SUserResponse)
 
-auth_router = APIRouter(prefix='/auth', tags=['Аутентификация'])
-user_router = APIRouter(prefix='/user', tags=['Пользователь'])
-admin_router = APIRouter(prefix='/admin', tags=['Администратор'])
+auth_router = APIRouter()
+user_router = APIRouter()
+admin_router = APIRouter()
 
 
 @auth_router.post('/register/')
@@ -32,7 +35,7 @@ async def register_user(user_data: SUserRegister) -> dict:
     return {'message': 'Вы успешно зарегистрированы!'}
 
 
-@user_router.patch('/user/me/')
+@user_router.patch('/me/')
 async def update_user(new_data: SUserUpdate,
                       user: User = Depends(get_current_user)):
     """Обновление пользователя."""
@@ -46,7 +49,7 @@ async def update_user(new_data: SUserUpdate,
     return {'message': 'Данные пользователя успешно обновлены!'}
 
 
-@user_router.delete('/user/me/')
+@user_router.delete('/me/')
 async def delete_user(user: User = Depends(logout)):
     """Удаление пользователя."""
     await user_crud.delete_user(user_id=user.id)
@@ -72,13 +75,28 @@ async def logout_user():
     return {'message': 'Пользователь успешно вышел из системы'}
 
 
-@user_router.get("/users/",
-                 response_model=List[SUserResponse],
-                 dependencies=[Depends(get_current_admin_user)])
+@admin_router.get('/users/',
+                  response_model=List[SUserResponse],
+                  dependencies=[Depends(get_current_admin_user)])
 async def get_all_users():
+    """Список данных пользователей."""
     return await user_crud.find_all()
 
 
-@user_router.get("/me/", response_model=SUserResponse)
+@user_router.get('/me/', response_model=SUserResponse)
 async def get_me(user_data: User = Depends(get_current_user)):
+    """Данные текущего пользователя."""
     return user_data
+
+
+@admin_router.post('/users/permitions/{user_id}/',
+                   dependencies=[Depends(get_current_admin_user)])
+async def change_user_permissions(user_id: int,
+                                  permitions: SUserPermission):
+    """Изменить права доступа пользователя."""
+    user = await user_crud.find_one_or_none(id=user_id)
+    if not user:
+        raise UserNotFoundException
+    await user_crud.update(filter_by={'id': user_id},
+                           **permitions.model_dump(exclude_unset=True))
+    return {'message': f'Права досупа пользователя {user_id} изменены'}
